@@ -29,6 +29,60 @@ npm run preview
 | Login | http://localhost:5175/login |
 
 ---
+## API Endpoints
+
+The project references the following endpoints and routes (examples found in the repository). Replace the host/base path as appropriate for your deployment.
+
+Frontend routes:
+
+- `GET /` — Landing
+- `GET /login` — Login
+- `GET /dashboard` — Dashboard
+- `GET /upload` — Upload
+- `GET /results/:id` — Results (e.g. `/results/demo`)
+- `GET /history` — History
+- `GET /reports` — Reports
+- `GET /settings` — Settings
+
+Server API endpoints (documented examples):
+
+- `POST /api/auth` — Authentication (login token)
+- `GET /api/users` — List users (supports pagination and filters)
+- `POST /api/users` — Create user
+- `GET /api/users/{id}` — Get user
+- `PUT /api/users/{id}` — Replace user
+- `PATCH /api/users/{id}` — Update user fields
+- `DELETE /api/users/{id}` — Delete user
+- `GET /api/users/{id}/orders` — List user's orders
+- `POST /api/users/{id}/orders` — Create order for user
+- `POST /api/users/batch` — Batch create users
+- `POST /api/createUser` — Example RPC-style create
+- `POST /api/getUserById` — Example RPC-style get
+- `POST /api/deleteUser` — Example RPC-style delete
+- `GET /api/orders` — List orders
+- `POST /api/orders` — Create order
+- `GET /api/orders/{id}` — Get order
+- `GET /api/products` — List products
+
+Common query params used in examples: `page`, `page_size`, `limit`, `cursor`, `search`/`q`, `sort`, `fields`, `status`, `role`.
+
+Notes: many of these endpoints are documented in `skills/api-design-principles/` as examples and templates — treat them as reference for a backend implementation.
+
+Recommended analysis & processing endpoints (suggested for backend teams):
+
+- `POST /api/analyses` — Upload dataset / create new analysis (multipart/form-data). Returns `{ "analysis_id": "..." }` and `202 Accepted`.
+- `GET /api/analyses` — List analyses (supports `page`, `page_size`, `status` filters).
+- `GET /api/analyses/{id}` — Get analysis metadata and summary (status, created_at, parameters).
+- `POST /api/analyses/{id}/start` — Start processing for an analysis (optional override params).
+- `GET /api/analyses/{id}/status` — Poll processing status (queued, running, completed, failed).
+- `GET /api/analyses/{id}/results` — Retrieve final results JSON (metrics, confidence scores, findings).
+- `GET /api/analyses/{id}/graphs` — Return structured data for charts/graphs used in the UI (timeseries, histograms, breakdowns).
+- `GET /api/analyses/{id}/graphs/{graphId}` — Single graph data (for lazy loading large visualizations).
+- `POST /api/analyses/{id}/recompute` — Re-run processing with modified parameters.
+- `GET /api/analyses/{id}/report` — Download report (PDF/HTML) for the analysis.
+
+These recommended endpoints align with the frontend flow (upload → process → results → charts → reports). If you want, I can add example request/response schemas for each endpoint into the README or generate an OpenAPI snippet.
+
 ## Screenshots
 A small gallery of the main pages (stored in `docs/screenshots/`):
 
