@@ -2,20 +2,20 @@
 
 A cutting-edge AI analysis platform built with React 19, TypeScript, and modern web technologies. Dark glassmorphism UI with advanced animations and real-time data visualization.
 
-## ?? Quick Start
+## Quick Start
 
-\\\ash
+```bash
 npm install
 npm run dev
 npm run build
 npm run preview
-\\\
+```
 
 **Dev Server**: http://localhost:5175/
 
 ---
 
-## ?? Quick Links
+## Quick Links
 
 | Page | URL |
 |------|-----|
@@ -30,7 +30,7 @@ npm run preview
 
 ---
 
-## ?? Screenshots
+## Screenshots
 
 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0;">
   <figure style="margin: 0; text-align: center;">
@@ -61,24 +61,24 @@ npm run preview
 
 ---
 
-## ?? Tech Stack
+## Tech Stack
 
 | Category | Technology |
 |----------|------------|
-| **Framework** | React 19 + TypeScript 5.6 |
-| **Build** | Vite 5.4 with SWC |
-| **Styling** | Tailwind CSS 4.0 |
-| **Components** | Radix UI (52 components) |
-| **Animations** | framer-motion 11.15.0 |
-| **Data Viz** | Recharts 2.x |
-| **Forms** | react-hook-form + Zod |
-| **Icons** | lucide-react (400+) |
-| **Routing** | wouter 3.3.5 |
-| **State** | React Query 5.64.1 |
+| Framework | React 19 + TypeScript 5.6 |
+| Build | Vite 5.4 with SWC |
+| Styling | Tailwind CSS 4.0 |
+| Components | Radix UI (52 components) |
+| Animations | framer-motion 11.15.0 |
+| Data Viz | Recharts 2.x |
+| Forms | react-hook-form + Zod |
+| Icons | lucide-react (400+) |
+| Routing | wouter 3.3.5 |
+| State | React Query 5.64.1 |
 
 ---
 
-## ? Features
+## Features
 
 - **Dashboard**: Real-time stats, AreaChart, active queue, timeline
 - **Upload**: 3-step multi-stage form with validation
@@ -93,7 +93,7 @@ npm run preview
 
 ---
 
-## ?? Color Palette
+## Color Palette
 
 - Primary: #7c3aed (Violet)
 - Secondary: #06b6d4 (Cyan)
@@ -103,44 +103,44 @@ npm run preview
 
 ---
 
-## ?? Project Structure
+## Project Structure
 
-\\\
+```
 src/
-+-- pages/
-�   +-- Dashboard.tsx
-�   +-- Upload.tsx
-�   +-- Results.tsx
-�   +-- History.tsx
-�   +-- Reports.tsx
-�   +-- Settings.tsx
-�   +-- Landing.tsx
-�   +-- Login.tsx
-+-- components/ui/
-+-- App.tsx
-+-- main.tsx
+├── pages/
+│   ├── Dashboard.tsx
+│   ├── Upload.tsx
+│   ├── Results.tsx
+│   ├── History.tsx
+│   ├── Reports.tsx
+│   ├── Settings.tsx
+│   ├── Landing.tsx
+│   └── Login.tsx
+├── components/ui/
+├── App.tsx
+└── main.tsx
 
 docs/screenshots/
-+-- 1-dashboard.jpg
-+-- 2-upload.jpg
-+-- 3-results.jpg
-+-- 4-history.jpg
-+-- 5-reports.jpg
-+-- 6-settings.jpg
-\\\
+├── 1-dashboard.jpg
+├── 2-upload.jpg
+├── 3-results.jpg
+├── 4-history.jpg
+├── 5-reports.jpg
+└── 6-settings.jpg
+```
 
 ---
 
-## ?? Notes
+## Notes
 
 - All pages fully functional with mock data
 - Form validation ready (react-hook-form + Zod)
 - React Query integration ready
 - Optimized animations for smooth 60 FPS
-- Build output: 873 KB ? 254 KB gzipped
+- Build output: 873 KB → 254 KB gzipped
 
 ---
 
-## ?? License
+## License
 
 MIT
