@@ -272,19 +272,39 @@ Once the dev server is running, navigate to these URLs to see the features in ac
 
 ---
 
-## 📷 Screenshots
-Below are the feature screenshots captured from the dev server. Replace the placeholders in `docs/screenshots/` with the final images if you want full-resolution PNG/JPEG files.
+## 📷 Compact Screenshot Gallery
+Below are the feature screenshots captured from the dev server. They are displayed as thumbnails to keep the README compact.
 
-- **Dashboard:** ![Dashboard](docs/screenshots/1-dashboard.jpg)
-- **Upload:** ![Upload workflow](docs/screenshots/2-upload.jpg)
-- **Results:** ![Results page](docs/screenshots/3-results.jpg)
-- **History:** ![History table](docs/screenshots/4-history.jpg)
-- **Reports:** ![Reports carousel](docs/screenshots/5-reports.jpg)
-- **Settings:** ![Settings panel](docs/screenshots/6-settings.jpg)
+<div style="display: flex; flex-wrap: wrap; gap: 16px;">
+  <figure style="width: 240px; margin: 0;">
+    <img src="docs/screenshots/1-dashboard.jpg" alt="Dashboard" width="240" />
+    <figcaption>Dashboard</figcaption>
+  </figure>
+  <figure style="width: 240px; margin: 0;">
+    <img src="docs/screenshots/2-upload.jpg" alt="Upload workflow" width="240" />
+    <figcaption>Upload</figcaption>
+  </figure>
+  <figure style="width: 240px; margin: 0;">
+    <img src="docs/screenshots/3-results.jpg" alt="Results page" width="240" />
+    <figcaption>Results</figcaption>
+  </figure>
+  <figure style="width: 240px; margin: 0;">
+    <img src="docs/screenshots/4-history.jpg" alt="History table" width="240" />
+    <figcaption>History</figcaption>
+  </figure>
+  <figure style="width: 240px; margin: 0;">
+    <img src="docs/screenshots/5-reports.jpg" alt="Reports carousel" width="240" />
+    <figcaption>Reports</figcaption>
+  </figure>
+  <figure style="width: 240px; margin: 0;">
+    <img src="docs/screenshots/6-settings.jpg" alt="Settings panel" width="240" />
+    <figcaption>Settings</figcaption>
+  </figure>
+</div>
 
 ---
 
-If you'd like, I can commit these changes and replace the placeholder images with real screenshots captured from the running dev server.
+> Tip: For improved visual quality, use the actual screenshot files stored in `docs/screenshots/` and keep the `width="240"` attribute for compact display.
 
 ### Color & Styling System
 ```
