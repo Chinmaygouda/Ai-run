@@ -30,38 +30,8 @@ npm run preview
 
 ---
 
-## Screenshots
-
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0;">
-  <figure style="margin: 0; text-align: center;">
-    <img src="docs/screenshots/1-dashboard.png" alt="Dashboard" width="100%" style="max-width: 280px;" />
-    <figcaption style="margin-top: 8px; font-size: 13px;">Dashboard</figcaption>
-  </figure>
-  <figure style="margin: 0; text-align: center;">
-    <img src="docs/screenshots/2-upload.png" alt="Upload" width="100%" style="max-width: 280px;" />
-    <figcaption style="margin-top: 8px; font-size: 13px;">Upload</figcaption>
-  </figure>
-  <figure style="margin: 0; text-align: center;">
-    <img src="docs/screenshots/3-results.png" alt="Results" width="100%" style="max-width: 280px;" />
-    <figcaption style="margin-top: 8px; font-size: 13px;">Results</figcaption>
-  </figure>
-  <figure style="margin: 0; text-align: center;">
-    <img src="docs/screenshots/4-history.png" alt="History" width="100%" style="max-width: 280px;" />
-    <figcaption style="margin-top: 8px; font-size: 13px;">History</figcaption>
-  </figure>
-  <figure style="margin: 0; text-align: center;">
-    <img src="docs/screenshots/5-reports.png" alt="Reports" width="100%" style="max-width: 280px;" />
-    <figcaption style="margin-top: 8px; font-size: 13px;">Reports</figcaption>
-  </figure>
-  <figure style="margin: 0; text-align: center;">
-    <img src="docs/screenshots/6-settings.png" alt="Settings" width="100%" style="max-width: 280px;" />
-    <figcaption style="margin-top: 8px; font-size: 13px;">Settings</figcaption>
-  </figure>
-</div>
-
----
-
 ## Tech Stack
+
 
 | Category | Technology |
 |----------|------------|
