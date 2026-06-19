@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  font-family: 'Futura Md BT Medium', system-ui, -apple-system, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #050505;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.visme_d,
+.visme_d iframe,
+.visme_d > div {
+  width: 100% !important;
+  min-height: 720px !important;
+  height: 720px !important;
+  max-height: 720px !important;
+  background: #000000 !important;
+  overflow: hidden !important;
+}
+
+.visme_d *::-webkit-scrollbar,
+.visme_d iframe::-webkit-scrollbar,
+.visme_d > div::-webkit-scrollbar {
+  display: none !important;
+}
+
+.visme_d,
+.visme_d iframe,
+.visme_d > div {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+.visme_d [class*="powered"],
+.visme_d [class*="byline"],
+.visme_d [class*="step"],
+.visme_d [class*="progress"],
+.visme_d a[href*="visme"],
+.visme_d .visme-power,
+.visme_d .powered-by,
+.visme_d button:has(img),
+.visme_d [id*="powered"],
+.visme_d [id*="step"],
+.visme_d span:has(a[href*="visme"]),
+.visme_d div:has(> a[href*="visme"]) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
