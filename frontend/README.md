@@ -30,18 +30,25 @@ npm run preview
 
 ---
 ## Screenshots
+A small gallery of the main pages (stored in `docs/screenshots/`):
 
-Place optional local screenshot images in `docs/screenshots/` and exclude them from git.
-Use these exact filenames:
+### Landing
+![Landing](docs/screenshots/1-landing_page.png)
 
-- `1-dashboard.png`
-- `2-upload.png`
-- `3-results.png`
-- `4-history.png`
-- `5-reports.png`
-- `6-settings.png`
+### Dashboard
+![Dashboard](docs/screenshots/2-dashboard.png)
 
-The screenshot folder is meant for local preview only and is not tracked in GitHub.
+### Results
+![Results](docs/screenshots/3-analysis.png)
+
+### History
+![History](docs/screenshots/4-history.png)
+
+### Reports
+![Reports](docs/screenshots/5-reports.png)
+
+### Settings
+![Settings](docs/screenshots/6-settings.png)
 
 ---
 ## Tech Stack
