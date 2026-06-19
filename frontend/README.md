@@ -92,8 +92,11 @@ A small gallery of the main pages (stored in `docs/screenshots/`):
 ### Dashboard
 ![Dashboard](docs/screenshots/2-dashboard.png)
 
+### Analysis
+![Analysis](docs/screenshots/3-analysis.png)
+
 ### Results
-![Results](docs/screenshots/3-analysis.png)
+![Results](docs/screenshots/7-Result.png)
 
 ### History
 ![History](docs/screenshots/4-history.png)
