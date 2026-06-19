@@ -29,7 +29,21 @@ npm run preview
 | Login | http://localhost:5175/login |
 
 ---
+## Screenshots
 
+Place optional local screenshot images in `docs/screenshots/` and exclude them from git.
+Use these exact filenames:
+
+- `1-dashboard.png`
+- `2-upload.png`
+- `3-results.png`
+- `4-history.png`
+- `5-reports.png`
+- `6-settings.png`
+
+The screenshot folder is meant for local preview only and is not tracked in GitHub.
+
+---
 ## Tech Stack
 
 
@@ -91,12 +105,12 @@ src/
 └── main.tsx
 
 docs/screenshots/
-├── 1-dashboard.jpg
-├── 2-upload.jpg
-├── 3-results.jpg
-├── 4-history.jpg
-├── 5-reports.jpg
-└── 6-settings.jpg
+├── 1-dashboard.png
+├── 2-upload.png
+├── 3-results.png
+├── 4-history.png
+├── 5-reports.png
+└── 6-settings.png
 ```
 
 ---
