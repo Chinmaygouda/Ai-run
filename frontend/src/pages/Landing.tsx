@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Sparkles, ArrowRight, Brain, Zap, Shield, Database, BarChart3, Target, Share2, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 const staggerContainer = {
   hidden: { opacity: 0 },
@@ -18,6 +19,19 @@ const fadeUp = {
 };
 
 export default function Landing() {
+  useEffect(() => {
+    // Load Visme forms embed script
+    const script = document.createElement('script');
+    script.src = 'https://static-bundles.visme.co/forms/vismeforms-embed.js';
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#09090b] text-white selection:bg-violet-500/30 relative overflow-hidden font-sans">
       {/* Global Background effects */}
@@ -133,6 +147,11 @@ export default function Landing() {
               </Link>
             </motion.div>
           </motion.div>
+        </section>
+
+        {/* Visme Event Sign Up Form */}
+        <section className="container mx-auto px-6 mt-20">
+          <div className="visme_d" data-title="Online Event Sign Up Form" data-url="rzn7ye08-online-event-sign-up-form" data-domain="forms" data-full-page="false" data-min-height="500px" data-form-id="186603"></div>
         </section>
       </main>
     </div>
