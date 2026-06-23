@@ -1,33 +1,17 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Outputs
-outputs/*
-!outputs/.gitkeep
-
 # Dataset
 [PUB] India_runs_data_and_ai_challenge/
 [PUB] India_runs_data_and_ai_challenge.zip
 
+# Safer wildcard
+*India_runs_data_and_ai_challenge*
+*.zip
+
 # Local files
 inside
 
-# Jupyter
-.ipynb_checkpoints/
+# Python
+__pycache__/
+*.pyc
 
-# Virtual environments
-venv/
-.venv/
-env/
-
-# OS files
-.DS_Store
-
-
-#Dataset
-[PUB] India_runs_data_and_ai_challenge/
-[PUB] India_runs_data_and_ai_challenge.zip
-inside
+# Outputs
+outputs/
