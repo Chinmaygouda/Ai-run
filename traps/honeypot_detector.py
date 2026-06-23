@@ -14,7 +14,8 @@ def detect_honeypot(candidate: Dict[str, Any]) -> Dict[str, Any]:
     """
     result = {
         "flag": False,
-        "penalty": 0.0
+        "penalty": 0.0,
+        "confidence": 0.0
     }
     
     if not candidate:
@@ -33,6 +34,7 @@ def detect_honeypot(candidate: Dict[str, Any]) -> Dict[str, Any]:
         yoe = 0.0
         
     penalties = []
+    confidences = []
         
     # 1. Senior Titles with Low Experience
     current_title = str(profile.get("current_title", "")).lower()
@@ -42,28 +44,30 @@ def detect_honeypot(candidate: Dict[str, Any]) -> Dict[str, Any]:
     if "senior" in clean_title_words or "sr" in clean_title_words:
         if yoe < 3.0:
             penalties.append(0.5)
+            confidences.append(0.8 if yoe < 1.0 else 0.6)
             
     if any(kw in clean_title_words for kw in ["lead", "principal", "staff"]):
         if yoe < 5.0:
             penalties.append(0.6)
+            confidences.append(0.9 if yoe < 2.0 else 0.7)
             
     if any(kw in clean_title_words for kw in ["director", "head", "vp", "chief"]):
         if yoe < 8.0:
             penalties.append(0.7)
+            confidences.append(0.95 if yoe < 3.0 else 0.75)
             
     # 2. Unrealistic Expertise & Skill Inflation
     expert_skill_count = 0
     total_months_experience = yoe * 12
     impossible_duration_count = 0
+    unrealistic_expert_count = 0
     
     for skill in skills:
         if not isinstance(skill, dict):
             continue
             
         proficiency = skill.get("proficiency", "").lower()
-        if proficiency == "expert":
-            expert_skill_count += 1
-            
+        
         # 3. Suspicious Skill Durations
         duration = skill.get("duration_months")
         try:
@@ -71,28 +75,44 @@ def detect_honeypot(candidate: Dict[str, Any]) -> Dict[str, Any]:
         except (ValueError, TypeError):
             duration = 0
             
+        if proficiency == "expert":
+            expert_skill_count += 1
+            if duration < 12: # Expert with < 1 year duration
+                unrealistic_expert_count += 1
+            
         # Allow 24 months buffer for side projects/education before formal employment
         if duration > total_months_experience + 24: 
             impossible_duration_count += 1
             
-    # Evaluate Unrealistic Expertise
-    if yoe < 2.0 and expert_skill_count >= 2:
+    # Evaluate Unrealistic Expertise (low duration for expert)
+    if unrealistic_expert_count >= 3:
         penalties.append(0.6)
-    elif yoe < 5.0 and expert_skill_count >= 5:
+        confidences.append(0.85)
+    elif unrealistic_expert_count >= 1:
+        penalties.append(0.3)
+        confidences.append(0.6)
+
+    # Evaluate Skill Inflation
+    if expert_skill_count >= 10:
         penalties.append(0.5)
-    elif expert_skill_count >= 10:
-        penalties.append(0.4)
+        confidences.append(0.8)
+    elif expert_skill_count >= 5 and yoe < 3.0:
+        penalties.append(0.6)
+        confidences.append(0.85)
         
     # Evaluate Suspicious Durations
     if impossible_duration_count >= 2:
         penalties.append(0.8)
+        confidences.append(0.9)
     elif impossible_duration_count == 1:
         penalties.append(0.4)
+        confidences.append(0.6)
         
     if penalties:
         result["flag"] = True
-        # Use the maximum penalty found for the final result
+        # Use the maximum penalty/confidence found for the final result
         result["penalty"] = max(penalties)
+        result["confidence"] = max(confidences)
         
     return result
 

@@ -4,35 +4,39 @@ from typing import Any, Dict
 EVIDENCE_CATEGORIES = {
     "retrieval_systems": {
         "keywords": {"retrieval", "information retrieval", "bm25", "dense retrieval", "sparse retrieval"},
-        "weight": 0.2
+        "weight": 5.0
     },
     "ranking_systems": {
         "keywords": {"ranking", "learning to rank", "ltr", "re ranking", "reranking", "cross encoder"},
-        "weight": 0.2
+        "weight": 5.0
     },
     "recommendation_systems": {
         "keywords": {"recommendation system", "recommendation systems", "recommender", "collaborative filtering", "content based filtering"},
-        "weight": 0.2
+        "weight": 4.0
     },
     "embeddings": {
         "keywords": {"embeddings", "embedding", "word2vec", "sentence transformers", "representation learning"},
-        "weight": 0.2
+        "weight": 4.0
     },
     "vector_databases": {
         "keywords": {"vector database", "vector databases", "vector db", "vector search", "faiss", "pinecone", "milvus", "qdrant", "weaviate", "chroma"},
-        "weight": 0.2
+        "weight": 4.0
     },
     "semantic_search": {
         "keywords": {"semantic search", "neural search", "dense search"},
-        "weight": 0.2
+        "weight": 4.0
     },
     "rag": {
         "keywords": {"rag", "retrieval augmented generation"},
-        "weight": 0.2
+        "weight": 3.0
     },
     "production_ml": {
         "keywords": {"production ml", "ml system", "ml systems", "mlops", "model deployment", "model serving", "scalable ml"},
-        "weight": 0.2
+        "weight": 3.0
+    },
+    "llms": {
+        "keywords": {"llm", "large language model", "llms", "gpt", "bert", "llama", "transformers"},
+        "weight": 2.0
     }
 }
 
@@ -88,7 +92,7 @@ def get_career_score(candidate: Dict[str, Any]) -> float:
         if any(f" {keyword} " in search_text for keyword in data["keywords"]):
             score += data["weight"]
             
-    return min(1.0, max(0.0, score))
+    return min(1.0, max(0.0, score / 15.0))
 
 if __name__ == "__main__":
     example_candidate = {

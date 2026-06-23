@@ -47,20 +47,26 @@ def detect_keyword_stuffer(candidate: Dict[str, Any]) -> Dict[str, Any]:
             if isinstance(skill_name, str) and any(kw in skill_name.lower() for kw in ai_keywords):
                 number_of_ai_skills += 1
                 
-    # Logic:
-    # High AI skills + Low career score = Suspicious
-    if number_of_ai_skills >= 5 and career_score < 0.2:
-        result["flag"] = True
-        if yoe < 3.0:
-            result["penalty"] = 0.6  # Very suspicious: many skills, low experience, no evidence
-        else:
-            result["penalty"] = 0.4  # Suspicious: many skills, some experience, no evidence
-    elif number_of_ai_skills >= 8 and career_score < 0.4:
-        result["flag"] = True
-        if yoe < 5.0:
-            result["penalty"] = 0.5
-        else:
-            result["penalty"] = 0.3
+    # Logic: High AI skills + Low career score = Suspicious
+    confidence = 0.0
+    if number_of_ai_skills >= 5:
+        if career_score <= 0.1:
+            confidence = 0.9 if number_of_ai_skills >= 8 else 0.7
+        elif career_score <= 0.3:
+            confidence = 0.7 if number_of_ai_skills >= 8 else 0.5
+        elif career_score <= 0.5:
+            confidence = 0.4 if number_of_ai_skills >= 10 else 0.0
+            
+        if confidence > 0:
+            if yoe > 5.0 and career_score < 0.2:
+                confidence = min(1.0, confidence + 0.2)
+            elif yoe < 2.0:
+                # Junior candidates might list skills from coursework with no career evidence
+                confidence = max(0.1, confidence - 0.3)
+                
+        if confidence >= 0.4:
+            result["flag"] = True
+            result["penalty"] = round(confidence * 0.8, 2)  # Max penalty 0.8
             
     return result
 
