@@ -1,4 +1,6 @@
 # Dataset
+candidates.jsonl
+
 [PUB] India_runs_data_and_ai_challenge/
 [PUB] India_runs_data_and_ai_challenge.zip
 
@@ -8,6 +10,7 @@
 
 # Local files
 inside
+result
 
 # Python
 __pycache__/

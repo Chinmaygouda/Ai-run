@@ -1,0 +1,82 @@
+   candidate_id  title_score  ...  honeypot_flag  honeypot_penalty
+0  CAND_0000001          0.6  ...          False               0.0
+1  CAND_0000002          0.2  ...          False               0.0
+2  CAND_0000003          0.2  ...          False               0.0
+3  CAND_0000004          0.2  ...          False               0.0
+4  CAND_0000005          0.2  ...          False               0.0
+
+[5 rows x 10 columns]
+(100000, 10)
+
+===== DESCRIBE =====
+         title_score   career_score  ...  behavior_score  experience_score
+count  100000.000000  100000.000000  ...   100000.000000     100000.000000
+mean        0.372972       0.082294  ...        0.350438          0.890829
+std         0.203748       0.132696  ...        0.118056          0.129790
+min         0.200000       0.000000  ...        0.085000          0.533333
+25%         0.200000       0.000000  ...        0.262000          0.800000
+50%         0.200000       0.000000  ...        0.340500          0.950000
+75%         0.600000       0.200000  ...        0.429000          1.000000
+max         1.000000       1.000000  ...        0.870500          1.000000
+
+[8 rows x 5 columns]
+
+===== SAMPLE 20 ROWS =====
+       candidate_id  title_score  ...  keyword_stuffer_flag  honeypot_flag
+81684  CAND_0081685          0.2  ...                 False          False
+8823   CAND_0008824          0.6  ...                 False           True
+79765  CAND_0079766          0.2  ...                 False          False
+24291  CAND_0024292          0.2  ...                 False          False
+72834  CAND_0072835          0.2  ...                 False          False
+12347  CAND_0012348          0.2  ...                 False          False
+13680  CAND_0013681          0.2  ...                 False          False
+84537  CAND_0084538          0.6  ...                 False          False
+52131  CAND_0052132          0.2  ...                 False          False
+38361  CAND_0038362          0.6  ...                 False          False
+46846  CAND_0046847          0.2  ...                 False          False
+56812  CAND_0056813          0.6  ...                 False          False
+79842  CAND_0079843          0.2  ...                 False          False
+12017  CAND_0012018          0.2  ...                 False          False
+1453   CAND_0001454          0.2  ...                 False          False
+65414  CAND_0065415          0.6  ...                 False          False
+54675  CAND_0054676          0.2  ...                 False          False
+71009  CAND_0071010          0.2  ...                 False          False
+95082  CAND_0095083          0.2  ...                 False          False
+35527  CAND_0035528          0.2  ...                 False          False
+
+[20 rows x 8 columns]
+
+===== ZERO SCORES =====
+title_score: 0/100000 (0.00%)
+career_score: 66724/100000 (66.72%)
+skill_score: 0/100000 (0.00%)
+behavior_score: 0/100000 (0.00%)
+experience_score: 0/100000 (0.00%)
+
+===== FLAG COUNTS =====
+Keyword Stuffers: 100
+Honeypots: 2944
+
+
+//top canditates
+       candidate_id  simple_score  title_score  career_score  skill_score
+11686  CAND_0011687      0.967172          1.0           1.0     0.984923
+2024   CAND_0002025      0.965755          1.0           1.0     0.960960
+88024  CAND_0088025      0.958591          1.0           1.0     0.895705
+18498  CAND_0018499      0.952646          1.0           1.0     0.897106
+52681  CAND_0052682      0.947103          1.0           1.0     0.844640
+39382  CAND_0039383      0.945680          1.0           1.0     0.842775
+77336  CAND_0077337      0.943232          1.0           1.0     0.860160
+8424   CAND_0008425      0.943065          1.0           1.0     0.963388
+74734  CAND_0074735      0.942958          1.0           1.0     0.836100
+5648   CAND_0005649      0.937717          1.0           1.0     0.832024
+55904  CAND_0055905      0.937536          1.0           1.0     0.964431
+64903  CAND_0064904      0.936860          1.0           1.0     0.892800
+71973  CAND_0071974      0.935244          1.0           1.0     0.885095
+37565  CAND_0037566      0.935106          1.0           1.0     0.867529
+70397  CAND_0070398      0.934497          1.0           1.0     0.910800
+46063  CAND_0046064      0.931588          1.0           1.0     0.902250
+40886  CAND_0040887      0.930825          1.0           1.0     0.875000
+81845  CAND_0081846      0.930501          1.0           1.0     0.941067
+16162  CAND_0016163      0.929780          1.0           1.0     0.788400
+79386  CAND_0079387      0.927994          1.0           1.0     0.810780
