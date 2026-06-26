@@ -10,7 +10,8 @@ import {
   Sparkles,
   Server,
   Menu,
-  X
+  X,
+  Trophy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       items: [
         { name: "History", href: "/history", icon: HistoryIcon },
         { name: "Reports", href: "/reports", icon: FileText },
+        { name: "Candidate Ranking", href: "/ranking", icon: Trophy },
       ]
     },
     {

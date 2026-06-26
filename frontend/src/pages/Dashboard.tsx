@@ -1,7 +1,8 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { format } from "date-fns";
-import { Activity, HardDrive, BarChart3, Target, Loader2, ArrowUpRight, ArrowDownRight, FileText, Clock } from "lucide-react";
+import { Activity, HardDrive, BarChart3, Target, Loader2, Trophy, FileText, AlertTriangle, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const staggerContainer = {
@@ -14,69 +15,117 @@ const fadeUp = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
 };
 
-const mockSummary = { 
-  totalAnalyses: 47, 
-  completedAnalyses: 39, 
-  processingAnalyses: 2, 
-  totalInsights: 184, 
-  totalReports: 12, 
-  avgConfidence: 0.947, 
-  storageUsedMb: 582.4, 
-  accuracyRate: 94.7 
-};
+interface Candidate {
+  candidate_id: string;
+  rank: number;
+  final_score: number;
+  skill_score: number;
+  experience_score: number;
+  keyword_stuffer_flag: boolean;
+  honeypot_flag: boolean;
+  duplicate_flag: boolean;
+  reasoning: string;
+}
 
-const mockTrends = Array.from({length: 14}, (_, i) => { 
-  const d = new Date(); 
-  d.setDate(d.getDate() - (13-i)); 
-  return { 
-    date: d.toISOString().split('T')[0], 
-    analyses: 2 + Math.floor(Math.sin(i)*3+4), 
-    insights: 10 + Math.floor(Math.cos(i)*8+12) 
-  }; 
-});
-
-const mockActivity = [
-  { id: 1, title: "Q3_Revenue_Analysis completed", type: "completed", timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString() },
-  { id: 2, title: "Customer_Churn_Model processing", type: "processing", timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
-  { id: 3, title: "Server logs anomalous patterns found", type: "completed", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
-  { id: 4, title: "Corrupted dataset uploaded", type: "failed", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() },
-  { id: 5, title: "Executive Report generated", type: "completed", timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
-];
-
-function getRelativeTime(dateString: string) {
-  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-  const daysDifference = Math.round((new Date(dateString).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-  const hoursDifference = Math.round((new Date(dateString).getTime() - new Date().getTime()) / (1000 * 60 * 60));
-  const minutesDifference = Math.round((new Date(dateString).getTime() - new Date().getTime()) / (1000 * 60));
-
-  if (Math.abs(minutesDifference) < 60) return rtf.format(minutesDifference, 'minute');
-  if (Math.abs(hoursDifference) < 24) return rtf.format(hoursDifference, 'hour');
-  return rtf.format(daysDifference, 'day');
+interface HealthData {
+  status: string;
+  version: string;
+  dataset: { candidates_count: number; jsonl_path: string };
+  models: { groq_api_key_configured: boolean; semantic_reranker_available: boolean };
 }
 
 export default function Dashboard() {
-  const summary = mockSummary;
-  const trends = mockTrends;
-  const activity = mockActivity;
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [health, setHealth] = useState<HealthData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [healthRes, candidatesRes] = await Promise.all([
+          fetch("/api/health"),
+          fetch("/api/candidates?page=1&limit=100"),
+        ]);
+        if (healthRes.ok) setHealth(await healthRes.json());
+        if (candidatesRes.ok) {
+          const data = await candidatesRes.json();
+          setCandidates(data.candidates || []);
+        }
+      } catch (_) {}
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  const totalCandidates = health?.dataset.candidates_count ?? candidates.length;
+  const rankedCount = candidates.length;
+  const flaggedCount = candidates.filter(c => c.keyword_stuffer_flag || c.honeypot_flag).length;
+  const avgScore = rankedCount > 0
+    ? candidates.reduce((s, c) => s + c.final_score, 0) / rankedCount
+    : 0;
 
   const stats = [
-    { label: "Total Analyses", value: summary.totalAnalyses, icon: BarChart3, color: "text-violet-400", bg: "bg-violet-500/10", trend: "+12%", trendUp: true },
-    { label: "Insights Found", value: summary.totalInsights, icon: Activity, color: "text-cyan-400", bg: "bg-cyan-500/10", trend: "+28%", trendUp: true },
-    { label: "Avg Confidence", value: `${Math.round(summary.avgConfidence * 100)}%`, icon: Target, color: "text-emerald-400", bg: "bg-emerald-500/10", trend: "+1.2%", trendUp: true },
-    { label: "Storage Used", value: `${Math.round(summary.storageUsedMb)} MB`, icon: HardDrive, color: "text-amber-400", bg: "bg-amber-500/10", trend: "+8.4%", trendUp: false }
+    { label: "Total Candidates", value: loading ? "…" : totalCandidates.toLocaleString(), icon: Users, color: "text-violet-400", bg: "bg-violet-500/10" },
+    { label: "Ranked", value: loading ? "…" : rankedCount, icon: Trophy, color: "text-amber-400", bg: "bg-amber-500/10" },
+    { label: "Avg Score", value: loading ? "…" : `${(avgScore * 100).toFixed(1)}%`, icon: Target, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+    { label: "Flagged", value: loading ? "…" : flaggedCount, icon: AlertTriangle, color: "text-red-400", bg: "bg-red-500/10" },
   ];
 
+  // Score distribution chart: bucket scores into ranges
+  const scoreBuckets = loading ? [] : (() => {
+    const buckets: { range: string; count: number }[] = [
+      { range: "0-40%", count: 0 },
+      { range: "40-50%", count: 0 },
+      { range: "50-60%", count: 0 },
+      { range: "60-70%", count: 0 },
+      { range: "70-80%", count: 0 },
+      { range: "80%+", count: 0 },
+    ];
+    candidates.forEach(c => {
+      const s = c.final_score * 100;
+      if (s < 40) buckets[0].count++;
+      else if (s < 50) buckets[1].count++;
+      else if (s < 60) buckets[2].count++;
+      else if (s < 70) buckets[3].count++;
+      else if (s < 80) buckets[4].count++;
+      else buckets[5].count++;
+    });
+    return buckets;
+  })();
+
+  const top5 = candidates.slice(0, 5);
+
+  const COLORS = ["#7c3aed", "#06b6d4", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+
   return (
-    <motion.div 
+    <motion.div
       initial="hidden"
       animate="visible"
       variants={staggerContainer}
       className="space-y-8"
     >
       <motion.div variants={fadeUp} className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight text-white">Command Center</h1>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-white">Command Center</h1>
+          <p className="text-zinc-400 text-sm mt-1">India Runs AI Challenge — Candidate Screening Dashboard</p>
+        </div>
+        {health && (
+          <div className={cn(
+            "flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium",
+            health.status === "ok"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+              : "border-red-500/30 bg-red-500/10 text-red-400"
+          )}>
+            <div className={cn(
+              "w-1.5 h-1.5 rounded-full animate-pulse",
+              health.status === "ok" ? "bg-emerald-400" : "bg-red-400"
+            )} />
+            API {health.status === "ok" ? "Online" : "Offline"} • v{health.version}
+          </div>
+        )}
       </motion.div>
 
+      {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, i) => (
           <motion.div
@@ -88,135 +137,136 @@ export default function Dashboard() {
               <div className={cn("p-2.5 rounded-xl border border-white/5", stat.bg)}>
                 <stat.icon className={cn("w-5 h-5", stat.color)} />
               </div>
-              <div className={cn(
-                "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full border",
-                stat.trendUp ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-amber-400 bg-amber-500/10 border-amber-500/20"
-              )}>
-                {stat.trendUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                {stat.trend}
-              </div>
             </div>
             <div className="relative z-10">
               <div className="text-sm font-medium text-zinc-400 mb-1">{stat.label}</div>
-              <div className="text-4xl font-bold font-mono text-white tracking-tight">{stat.value}</div>
+              <div className="text-4xl font-bold font-mono text-white tracking-tight">
+                {loading ? <Loader2 className="w-6 h-6 animate-spin text-zinc-500" /> : stat.value}
+              </div>
             </div>
-            <div className={cn(
-              "absolute -bottom-10 -right-10 w-32 h-32 blur-[40px] opacity-0 group-hover:opacity-20 transition-opacity duration-500",
-              stat.bg.replace('/10', '')
-            )} />
           </motion.div>
         ))}
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
+        {/* Score Distribution Chart */}
         <motion.div variants={fadeUp} className="lg:col-span-2 p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl flex flex-col min-h-[400px]">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-white">Platform Activity</h2>
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-violet-500" /><span className="text-zinc-400 font-mono">Analyses</span></div>
-              <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-cyan-500" /><span className="text-zinc-400 font-mono">Insights</span></div>
+            <h2 className="text-lg font-bold text-white">Score Distribution</h2>
+            <span className="text-xs text-zinc-500 font-mono">{rankedCount} candidates</span>
+          </div>
+          {loading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-zinc-500" />
             </div>
-          </div>
-          <div className="flex-1 w-full relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorAnalyses" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#7c3aed" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorInsights" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis 
-                  dataKey="date" 
-                  stroke="rgba(255,255,255,0.3)" 
-                  tickFormatter={(val) => format(new Date(val), 'MMM dd')}
-                  tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12, fontFamily: 'monospace' }}
-                  axisLine={false}
-                  tickLine={false}
-                  dy={10}
-                />
-                <YAxis 
-                  stroke="rgba(255,255,255,0.3)"
-                  tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12, fontFamily: 'monospace' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#09090b', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
-                  itemStyle={{ color: '#fff', fontFamily: 'monospace' }}
-                  labelStyle={{ color: '#a1a1aa', marginBottom: '8px' }}
-                />
-                <Area type="monotone" dataKey="insights" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill="url(#colorInsights)" />
-                <Area type="monotone" dataKey="analyses" stroke="#7c3aed" strokeWidth={2} fillOpacity={1} fill="url(#colorAnalyses)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          ) : (
+            <div className="flex-1 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={scoreBuckets} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                  <XAxis
+                    dataKey="range"
+                    stroke="rgba(255,255,255,0.3)"
+                    tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'monospace' }}
+                    axisLine={false}
+                    tickLine={false}
+                    dy={10}
+                  />
+                  <YAxis
+                    stroke="rgba(255,255,255,0.3)"
+                    tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11, fontFamily: 'monospace' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#09090b', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
+                    itemStyle={{ color: '#fff', fontFamily: 'monospace' }}
+                    labelStyle={{ color: '#a1a1aa', marginBottom: '8px' }}
+                    formatter={(val: any) => [val, "Candidates"]}
+                  />
+                  <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                    {scoreBuckets.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </motion.div>
 
+        {/* Top 5 Sidebar */}
         <div className="flex flex-col gap-6">
-          <motion.div variants={fadeUp} className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl">
-            <h2 className="text-lg font-bold text-white mb-4 flex items-center justify-between">
-              Active Queue
-              {summary.processingAnalyses > 0 ? (
-                <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
-              ) : (
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
-              )}
+          <motion.div variants={fadeUp} className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl flex-1">
+            <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-amber-400" /> Top 5 Candidates
             </h2>
-            <div className="space-y-3">
-              {[1, 2].map((i) => (
-                <div key={i} className="p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center border border-violet-500/20">
-                      <FileText className="w-4 h-4 text-violet-400" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-white group-hover:text-violet-300 transition-colors">Customer_Churn_Model</div>
-                      <div className="text-xs text-zinc-500 flex items-center gap-1 font-mono">
-                        <Clock className="w-3 h-3" /> ~2 min left
+            {loading ? (
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
+              </div>
+            ) : top5.length === 0 ? (
+              <p className="text-zinc-500 text-sm">No candidates ranked yet. Run the pipeline first.</p>
+            ) : (
+              <div className="space-y-3">
+                {top5.map((c, i) => (
+                  <div key={c.candidate_id} className="p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between group">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border",
+                        i === 0 ? "bg-amber-500/20 text-amber-400 border-amber-500/40" :
+                        i < 3 ? "bg-violet-500/20 text-violet-400 border-violet-500/40" :
+                        "bg-white/5 text-zinc-400 border-white/10"
+                      )}>
+                        {c.rank}
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-white font-mono">{c.candidate_id}</div>
+                        <div className="text-xs text-zinc-500">{(c.final_score * 100).toFixed(1)}% score</div>
                       </div>
                     </div>
-                  </div>
-                  <div className="w-8 h-1 rounded-full bg-white/10 overflow-hidden">
-                    <div className="h-full bg-violet-500 w-[60%] animate-pulse" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          <motion.div variants={fadeUp} className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl flex-1 flex flex-col">
-            <h2 className="text-lg font-bold text-white mb-4">Recent Activity</h2>
-            <div className="space-y-0 flex-1 overflow-y-auto pr-2">
-              {activity.map((item, i) => {
-                let color = "text-zinc-500 bg-white/10";
-                let dotGlow = "";
-                if (item.type === "completed") { color = "text-emerald-400"; dotGlow = "shadow-[0_0_8px_rgba(52,211,153,0.5)] bg-emerald-400"; }
-                if (item.type === "processing") { color = "text-violet-400"; dotGlow = "shadow-[0_0_8px_rgba(124,58,237,0.5)] bg-violet-400 animate-pulse"; }
-                if (item.type === "failed") { color = "text-red-400"; dotGlow = "shadow-[0_0_8px_rgba(248,113,113,0.5)] bg-red-400"; }
-                
-                return (
-                  <div key={item.id} className="relative pl-6 pb-6 last:pb-0">
-                    {i !== activity.length - 1 && (
-                      <div className="absolute left-[3px] top-2 bottom-0 w-px bg-white/10" />
-                    )}
-                    <div className={cn("absolute left-0 top-1.5 w-1.5 h-1.5 rounded-full z-10", dotGlow || "bg-zinc-600")} />
-                    
-                    <div className="text-sm font-medium text-white mb-1 group-hover:text-white transition-colors">{item.title}</div>
-                    <div className="flex items-center justify-between">
-                      <span className={cn("text-xs uppercase tracking-wider font-bold", color)}>{item.type}</span>
-                      <span className="text-xs text-zinc-500 font-mono">{getRelativeTime(item.timestamp)}</span>
+                    <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-violet-500 to-cyan-400 rounded-full"
+                        style={{ width: `${c.final_score * 100}%` }}
+                      />
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
           </motion.div>
+
+          {/* Model Status */}
+          {health && (
+            <motion.div variants={fadeUp} className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl">
+              <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <Activity className="w-5 h-5 text-cyan-400" /> System Status
+              </h2>
+              <div className="space-y-3">
+                {[
+                  { label: "Groq API Key", ok: health.models.groq_api_key_configured },
+                  { label: "Semantic Reranker", ok: health.models.semantic_reranker_available },
+                  { label: "Dataset Loaded", ok: health.dataset.candidates_count > 0 },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <span className="text-zinc-400">{item.label}</span>
+                    <span className={cn(
+                      "px-2 py-0.5 rounded-full text-xs font-medium border",
+                      item.ok
+                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                        : "bg-red-500/10 text-red-400 border-red-500/20"
+                    )}>
+                      {item.ok ? "✓ Active" : "✗ Missing"}
+                    </span>
+                  </div>
+                ))}
+                <div className="pt-2 border-t border-white/10">
+                  <span className="text-xs text-zinc-500 font-mono">{health.dataset.candidates_count.toLocaleString()} candidates in dataset</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
     </motion.div>

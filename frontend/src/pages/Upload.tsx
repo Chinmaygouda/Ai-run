@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { UploadCloud, File, AlertTriangle, Loader2, Brain, TrendingUp, MessageSquare, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +16,7 @@ const fadeUp = {
 };
 
 export default function Upload() {
+  const [location, setLocation] = useLocation();
   const [step, setStep] = useState(1);
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
@@ -22,6 +24,7 @@ export default function Upload() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [priority, setPriority] = useState("normal");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -38,6 +41,53 @@ export default function Upload() {
       e.preventDefault();
       setTags([...tags, tagInput.trim().toLowerCase()]);
       setTagInput("");
+    }
+  };
+
+  const handleAnalyze = async () => {
+    setIsSubmitting(true);
+    try {
+      // If file is a resume (PDF/image), upload it via the resume API
+      const isResume = file && (
+        file.type === "application/pdf" ||
+        file.type.startsWith("image/")
+      );
+
+      if (isResume && file) {
+        const formData = new FormData();
+        formData.append("file", file);
+        const uploadRes = await fetch("/api/resume/upload", {
+          method: "POST",
+          body: formData,
+        });
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json().catch(() => ({}));
+          throw new Error(err.detail || `Upload failed: ${uploadRes.status}`);
+        }
+      }
+
+      // Trigger ranking pipeline
+      const rankRes = await fetch("/api/rank", { method: "POST" });
+      if (!rankRes.ok) throw new Error("Failed to trigger ranking");
+      const rankData = await rankRes.json();
+      const jobId = rankData.job_id;
+
+      // Poll for completion (up to 60 seconds)
+      let done = false;
+      for (let i = 0; i < 20 && !done; i++) {
+        await new Promise(r => setTimeout(r, 3000));
+        const statusRes = await fetch(`/api/rank/status/${jobId}`);
+        if (statusRes.ok) {
+          const status = await statusRes.json();
+          if (status.status === "completed") { done = true; break; }
+          if (status.status === "failed") throw new Error(status.message || "Ranking failed");
+        }
+      }
+
+      setLocation("/results/current");
+    } catch (e: any) {
+      alert(`Analysis error: ${e.message}`);
+      setIsSubmitting(false);
     }
   };
 
@@ -260,10 +310,14 @@ export default function Upload() {
             </div>
 
             <div className="flex gap-3 pt-6">
-              <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
-              <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-                <Loader2 className="w-4 h-4 mr-2" />
-                Upload & Analyze
+              <Button variant="outline" onClick={() => setStep(2)} disabled={isSubmitting}>Back</Button>
+              <Button 
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                onClick={handleAnalyze}
+                disabled={isSubmitting}
+              >
+                <Loader2 className={cn("w-4 h-4 mr-2", isSubmitting && "animate-spin")} />
+                {isSubmitting ? "Analyzing..." : "Upload & Analyze"}
               </Button>
             </div>
           </motion.div>

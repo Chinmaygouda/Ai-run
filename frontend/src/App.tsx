@@ -2,6 +2,7 @@ import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { motion } from "framer-motion";
+import React, { Suspense, lazy } from "react";
 
 // Pages
 import Landing from "@/pages/Landing";
@@ -15,6 +16,18 @@ import History from "@/pages/History";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
+
+// Ranking module — lazy loaded from sibling ranking folder (Vite resolves at bundle time)
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore — path resolved by Vite alias, not TypeScript
+const RankingComponent = lazy(() => import("../ranking/RankingComponent"));
+
+// Suspense fallback
+const RankingFallback = () => (
+  <div className="flex h-64 items-center justify-center text-zinc-400 font-mono text-sm">
+    <div className="animate-pulse">Loading Ranking Engine...</div>
+  </div>
+);
 
 // Layouts
 import SidebarLayout from "@/components/layout/SidebarLayout";
@@ -47,6 +60,11 @@ function AuthenticatedRoutes() {
           <Route path="/history" component={History} />
           <Route path="/reports" component={Reports} />
           <Route path="/settings" component={Settings} />
+          <Route path="/ranking">
+            <Suspense fallback={<RankingFallback />}>
+              <RankingComponent />
+            </Suspense>
+          </Route>
           <Route component={NotFound} />
         </Switch>
       </motion.div>
@@ -67,6 +85,7 @@ function Router() {
       <Route path="/history" component={AuthenticatedRoutes} />
       <Route path="/reports" component={AuthenticatedRoutes} />
       <Route path="/settings" component={AuthenticatedRoutes} />
+      <Route path="/ranking" component={AuthenticatedRoutes} />
       <Route component={NotFound} />
     </Switch>
   );
