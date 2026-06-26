@@ -53,6 +53,7 @@ export default function Upload() {
         file.type.startsWith("image/")
       );
 
+      let uploaded = false;
       if (isResume && file) {
         const formData = new FormData();
         formData.append("file", file);
@@ -64,6 +65,15 @@ export default function Upload() {
           const err = await uploadRes.json().catch(() => ({}));
           throw new Error(err.detail || `Upload failed: ${uploadRes.status}`);
         }
+        const uploadData = await uploadRes.json();
+        uploaded = uploadData.status === "success";
+      }
+
+      // Only trigger ranking pipeline if a resume was successfully uploaded
+      if (!uploaded) {
+        toast.error("Please upload a valid resume (PDF or image) to proceed.");
+        setIsSubmitting(false);
+        return;
       }
 
       // Trigger ranking pipeline
@@ -86,7 +96,7 @@ export default function Upload() {
 
       setLocation("/results/current");
     } catch (e: any) {
-      alert(`Analysis error: ${e.message}`);
+      toast.error(`Analysis error: ${e.message}`);
       setIsSubmitting(false);
     }
   };

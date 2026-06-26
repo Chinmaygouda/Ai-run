@@ -24,14 +24,21 @@ except ModuleNotFoundError:
     from weight_config import FUSION_WEIGHTS
     from evaluation import validate_submission_csv
 
-def ensure_directories():
+def ensure_directories(base_dir: str = None):
     """Create outputs/ and data/ directories if they don't exist."""
-    os.makedirs("outputs", exist_ok=True)
-    os.makedirs("data", exist_ok=True)
+    if base_dir is None:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    os.makedirs(os.path.join(base_dir, "outputs"), exist_ok=True)
+    os.makedirs(os.path.join(base_dir, "data"), exist_ok=True)
 
-def find_dataset_file() -> str:
+def find_dataset_file(base_dir: str = None) -> str:
     """Find the candidates.jsonl file path in either root or data/."""
-    paths = ["data/candidates.jsonl", "candidates.jsonl"]
+    if base_dir is None:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    paths = [
+        os.path.join(base_dir, "data", "candidates.jsonl"),
+        os.path.join(base_dir, "candidates.jsonl")
+    ]
     for path in paths:
         if os.path.exists(path):
             return path
@@ -53,9 +60,11 @@ def clean_id(raw_id: Any) -> str:
         pass
     return str(raw_id).strip()
 
-def load_job_description() -> str:
+def load_job_description(base_dir: str = None) -> str:
     """Load the job description text."""
-    path = "data/jd.txt"
+    if base_dir is None:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    path = os.path.join(base_dir, "data", "jd.txt")
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
             return f.read()
@@ -115,14 +124,16 @@ def _extract_candidate_features_worker(args):
     except Exception:
         return None
 
-def run_feature_extraction_pipeline(dataset_path: str, global_counts: Dict[str, int]) -> pd.DataFrame:
+def run_feature_extraction_pipeline(dataset_path: str, global_counts: Dict[str, int], base_dir: str = None) -> pd.DataFrame:
     """
     Run feature extraction and trap detection on the raw dataset.
     """
+    if base_dir is None:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     print(f"Reading candidates from {dataset_path} and running extraction pipeline (multiprocessing)...")
     
     # 1. Load JD and extract keywords once
-    jd_text = load_job_description()
+    jd_text = load_job_description(base_dir)
     jd_keywords = extract_jd_keywords(jd_text)
     print(f"Extracted {len(jd_keywords)} dynamic keywords from Job Description.")
     
@@ -150,7 +161,7 @@ def run_feature_extraction_pipeline(dataset_path: str, global_counts: Dict[str, 
                 rows.append(result)
                 
     df = pd.DataFrame(rows)
-    df.to_csv("outputs/candidate_features.csv", index=False)
+    df.to_csv(os.path.join(base_dir, "outputs", "candidate_features.csv"), index=False)
     print(f"Feature extraction complete. Extracted features for {len(df)} candidates.")
     return df
 
@@ -176,7 +187,7 @@ def load_top_candidates_raw(dataset_path: str, target_ids: set) -> Dict[str, Dic
                         
     return raw_candidates
 
-def run_ranking_pipeline():
+def run_ranking_pipeline(base_dir: str = None):
     """
     Orchestrate the entire pipeline:
     1. Load JD and candidate features (or generate features if missing).
@@ -188,15 +199,18 @@ def run_ranking_pipeline():
     7. Generate explanations for the Top 100.
     8. Write output files (top100.csv and submission.csv) and run validation.
     """
-    ensure_directories()
+    if base_dir is None:
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        
+    ensure_directories(base_dir)
     
     # 1. Load Job Description
-    jd_text = load_job_description()
+    jd_text = load_job_description(base_dir)
     print(f"Loaded Job Description: {jd_text[:120]}...")
     
     # 2. Check dataset file
-    dataset_path = find_dataset_file()
-    feature_csv = "outputs/candidate_features.csv"
+    dataset_path = find_dataset_file(base_dir)
+    feature_csv = os.path.join(base_dir, "outputs", "candidate_features.csv")
     
     df_features = None
     
@@ -215,7 +229,7 @@ def run_ranking_pipeline():
             print("Error: candidates.jsonl not found in root or data/ directory. Cannot extract features.")
             raise FileNotFoundError("candidates.jsonl not found in root or data/ directory. Cannot extract features.")
         global_counts = build_global_description_counts(dataset_path)
-        df_features = run_feature_extraction_pipeline(dataset_path, global_counts)
+        df_features = run_feature_extraction_pipeline(dataset_path, global_counts, base_dir)
         
     print(f"Loaded features for {len(df_features)} candidates.")
     
@@ -320,7 +334,7 @@ def run_ranking_pipeline():
     # Filter columns that actually exist
     top_100_cols = [c for c in top_100_cols if c in top_100.columns]
     
-    top100_csv_path = "outputs/top100.csv"
+    top100_csv_path = os.path.join(base_dir, "outputs", "top100.csv")
     with open(top100_csv_path, "w", encoding="utf-8", newline="") as f:
         top_100[top_100_cols].to_csv(f, index=False)
         f.flush()
@@ -331,7 +345,7 @@ def run_ranking_pipeline():
     submission_cols = ["candidate_id", "rank", "score", "reasoning"]
     submission_df = top_100.rename(columns={"final_score": "score"})[submission_cols]
     
-    submission_csv_path = "outputs/submission.csv"
+    submission_csv_path = os.path.join(base_dir, "outputs", "submission.csv")
     with open(submission_csv_path, "w", encoding="utf-8", newline="") as f:
         submission_df.to_csv(f, index=False)
         f.flush()

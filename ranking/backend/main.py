@@ -66,9 +66,10 @@ ALLOWED_RESUME_TYPES = {
 MAX_RESUME_SIZE_MB = 10
 
 # ---------------------------------------------------------------------------
-# In-memory job store (replace with Redis/DB in production)
+# Persistent Job Store (Redis/SQLite Fallback)
 # ---------------------------------------------------------------------------
-_job_store: Dict[str, Dict] = {}
+from backend.job_store import JobStore
+_job_store = JobStore()
 _executor = ThreadPoolExecutor(max_workers=2)
 
 # ---------------------------------------------------------------------------
@@ -82,9 +83,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -256,18 +257,12 @@ async def upload_resume(file: UploadFile = File(...)):
 # ===========================================================================
 def _run_pipeline_job(job_id: str):
     """Run the pipeline in a thread and update the job store."""
-    _job_store[job_id]["status"] = "running"
+    _job_store.set(job_id, "running")
     try:
-        # Change CWD to project root so relative paths inside pipeline work
-        original_cwd = os.getcwd()
-        os.chdir(BASE_DIR)
-        run_ranking_pipeline()
-        os.chdir(original_cwd)
-        _job_store[job_id]["status"] = "completed"
-        _job_store[job_id]["message"] = "Ranking pipeline completed successfully."
+        run_ranking_pipeline(base_dir=BASE_DIR)
+        _job_store.set(job_id, "completed", "Ranking pipeline completed successfully.")
     except Exception as e:
-        _job_store[job_id]["status"] = "failed"
-        _job_store[job_id]["message"] = str(e)
+        _job_store.set(job_id, "failed", str(e))
         logger.exception(f"Pipeline job {job_id} failed")
 
 
@@ -278,7 +273,7 @@ def trigger_ranking(background_tasks: BackgroundTasks):
     Returns a job_id immediately — poll GET /api/rank/status/{job_id} for progress.
     """
     job_id = uuid.uuid4().hex[:10]
-    _job_store[job_id] = {"status": "queued", "message": ""}
+    _job_store.set(job_id, "queued", "")
     background_tasks.add_task(_run_pipeline_job, job_id)
     logger.info(f"Ranking pipeline queued. Job ID: {job_id}")
     return {
@@ -307,19 +302,12 @@ def get_candidates(
 ):
     """
     Retrieve ranked candidates from outputs/top100.csv with pagination.
-    Triggers the ranking pipeline automatically if the output file doesn't exist.
     """
     if not os.path.exists(TOP100_PATH):
-        try:
-            original_cwd = os.getcwd()
-            os.chdir(BASE_DIR)
-            run_ranking_pipeline()
-            os.chdir(original_cwd)
-        except Exception:
-            raise HTTPException(
-                status_code=404,
-                detail="outputs/top100.csv not found and pipeline run failed."
-            )
+        raise HTTPException(
+            status_code=404,
+            detail="No ranking results found. POST /api/rank to trigger the pipeline first."
+        )
 
     if os.path.exists(TOP100_PATH):
         try:
@@ -393,17 +381,10 @@ def export_csv(file_type: str):
         )
     file_path = EXPORT_FILES[file_type]
     if not os.path.exists(file_path):
-        # Try to run pipeline first
-        try:
-            original_cwd = os.getcwd()
-            os.chdir(BASE_DIR)
-            run_ranking_pipeline()
-            os.chdir(original_cwd)
-        except Exception as e:
-            raise HTTPException(
-                status_code=404,
-                detail=f"File '{file_type}.csv' not found and pipeline failed: {e}"
-            )
+        raise HTTPException(
+            status_code=404,
+            detail=f"File '{file_type}.csv' not found. POST /api/rank to trigger the pipeline first."
+        )
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail=f"File '{file_type}.csv' not found.")
 
