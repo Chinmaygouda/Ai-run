@@ -4,6 +4,7 @@ import { UploadCloud, File, AlertTriangle, Loader2, Brain, TrendingUp, MessageSq
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const staggerContainer = {
   hidden: { opacity: 0 },
