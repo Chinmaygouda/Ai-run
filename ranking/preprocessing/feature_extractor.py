@@ -10,7 +10,7 @@ from preprocessing.career_features import get_career_score
 from preprocessing.skill_features import get_skill_score
 from preprocessing.behavioral_features import get_behavior_score
 from preprocessing.experience_features import get_experience_score
-from preprocessing.product_company_features import get_product_company_score
+from preprocessing.product_company_features import get_product_company_score, check_is_services_only
 from preprocessing.location_features import get_location_score
 
 from traps.keyword_stuffer import detect_keyword_stuffer
@@ -37,6 +37,7 @@ def extract_features(candidate: Dict[str, Any], jd_keywords: set = None) -> Dict
     experience_score = get_experience_score(candidate)
     product_company_score = get_product_company_score(candidate)
     location_score = get_location_score(candidate)
+    is_services_only = check_is_services_only(candidate)
     
     # Detect traps
     keyword_stuffer_result = detect_keyword_stuffer(candidate, jd_keywords)
@@ -51,6 +52,7 @@ def extract_features(candidate: Dict[str, Any], jd_keywords: set = None) -> Dict
         "experience_score": experience_score,
         "product_company_score": product_company_score,
         "location_score": location_score,
+        "is_services_only": is_services_only,
         "keyword_stuffer_flag": keyword_stuffer_result.get("flag", False),
         "keyword_stuffer_penalty": keyword_stuffer_result.get("penalty", 0.0),
         "honeypot_flag": honeypot_result.get("flag", False),

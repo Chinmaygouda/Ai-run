@@ -299,9 +299,11 @@ def get_rank_status(job_id: str):
 def get_candidates(
     page: int = Query(default=1, ge=1, description="Page number"),
     limit: int = Query(default=20, ge=1, le=100, description="Results per page"),
+    search: Optional[str] = Query(default=None, description="Search by candidate ID"),
 ):
     """
     Retrieve ranked candidates from outputs/top100.csv with pagination.
+    Supports optional search query matching candidate_id.
     """
     if not os.path.exists(TOP100_PATH):
         raise HTTPException(
@@ -313,6 +315,124 @@ def get_candidates(
         try:
             df = pd.read_csv(TOP100_PATH)
             df["candidate_id"] = df["candidate_id"].apply(clean_id)
+            
+            # Apply search filter — 3-tier fallback: Top 100 → feature CSV → raw JSONL
+            if search:
+                search_clean = str(search).strip().lower()
+                df = df[df["candidate_id"].str.lower().str.contains(search_clean, regex=False)]
+                
+                # Tier 2: search the entire candidate_features.csv (100k rows)
+                if df.empty:
+                    feature_csv = os.path.join(OUTPUTS_DIR, "candidate_features.csv")
+                    if os.path.exists(feature_csv):
+                        df_all = pd.read_csv(feature_csv)
+                        df_all["candidate_id"] = df_all["candidate_id"].apply(clean_id)
+                        matches = df_all[df_all["candidate_id"].str.lower().str.contains(search_clean, regex=False)]
+                        
+                        if not matches.empty:
+                            try:
+                                from ranking.scoring_engine import calculate_rule_score
+                            except ImportError:
+                                from scoring_engine import calculate_rule_score
+                                
+                            new_rows = []
+                            for _, row in matches.iterrows():
+                                rule_score = calculate_rule_score(row)
+                                stuffer_mult = 0.25 if row.get("keyword_stuffer_flag", False) else 1.0
+                                hp = float(row.get("honeypot_penalty", 0.0) or 0.0)
+                                dp = float(row.get("duplicate_penalty", 0.0) or 0.0)
+                                final_score = rule_score * stuffer_mult * (1.0 - hp) * (1.0 - dp)
+                                new_rows.append({
+                                    "candidate_id": row["candidate_id"],
+                                    "rank": "N/A",
+                                    "final_score": round(final_score, 6),
+                                    "final_rule_score": round(final_score, 6),
+                                    "semantic_score": 0.0,
+                                    "title_score": float(row.get("title_score", 0.0) or 0.0),
+                                    "career_score": float(row.get("career_score", 0.0) or 0.0),
+                                    "skill_score": float(row.get("skill_score", 0.0) or 0.0),
+                                    "experience_score": float(row.get("experience_score", 0.0) or 0.0),
+                                    "product_company_score": float(row.get("product_company_score", 0.0) or 0.0),
+                                    "behavior_score": float(row.get("behavior_score", 0.0) or 0.0),
+                                    "location_score": float(row.get("location_score", 0.0) or 0.0),
+                                    "keyword_stuffer_flag": bool(row.get("keyword_stuffer_flag", False)),
+                                    "honeypot_flag": bool(row.get("honeypot_flag", False)),
+                                    "duplicate_flag": bool(row.get("duplicate_flag", False)),
+                                    "reasoning": "Candidate is in the database but did not place in the Top 100.",
+                                })
+                            df = pd.DataFrame(new_rows)
+                
+                # Tier 3: scan raw JSONL for candidates ingested after last pipeline run
+                if df.empty and os.path.exists(JSONL_PATH):
+                    try:
+                        from preprocessing.feature_extractor import extract_features
+                        from traps.keyword_stuffer import extract_jd_keywords
+                        from traps.honeypot_detector import detect_honeypot
+                        from traps.keyword_stuffer import detect_keyword_stuffer
+                        try:
+                            from ranking.scoring_engine import calculate_rule_score
+                        except ImportError:
+                            from scoring_engine import calculate_rule_score
+                        
+                        # Load feature CSV IDs so we know what's "new"
+                        known_ids: set = set()
+                        feature_csv = os.path.join(OUTPUTS_DIR, "candidate_features.csv")
+                        if os.path.exists(feature_csv):
+                            df_known = pd.read_csv(feature_csv, usecols=["candidate_id"])
+                            known_ids = set(df_known["candidate_id"].apply(clean_id).tolist())
+                        
+                        jd_text = ""
+                        if os.path.exists(JD_PATH):
+                            with open(JD_PATH, "r", encoding="utf-8") as jf:
+                                jd_text = jf.read()
+                        jd_keywords = extract_jd_keywords(jd_text) if jd_text else set()
+                        
+                        new_rows = []
+                        with open(JSONL_PATH, "r", encoding="utf-8") as jl:
+                            for line in jl:
+                                if not line.strip():
+                                    continue
+                                try:
+                                    cand = json.loads(line)
+                                    cid = clean_id(cand.get("candidate_id", ""))
+                                    if cid in known_ids:
+                                        continue  # already in features CSV
+                                    if search_clean not in cid.lower():
+                                        continue
+                                    # Extract features on-the-fly
+                                    features = extract_features(cand, jd_keywords)
+                                    features["candidate_id"] = cid
+                                    rule_score = calculate_rule_score(features)
+                                    hp_result = detect_honeypot(cand)
+                                    stuffer_result = detect_keyword_stuffer(cand, jd_keywords)
+                                    stuffer_mult = 0.25 if stuffer_result.get("flag") else 1.0
+                                    hp = float(hp_result.get("penalty", 0.0))
+                                    final_score = rule_score * stuffer_mult * (1.0 - hp)
+                                    new_rows.append({
+                                        "candidate_id": cid,
+                                        "rank": "NEW",
+                                        "final_score": round(final_score, 6),
+                                        "final_rule_score": round(rule_score, 6),
+                                        "semantic_score": 0.0,
+                                        "title_score": round(float(features.get("title_score", 0.0)), 4),
+                                        "career_score": round(float(features.get("career_score", 0.0)), 4),
+                                        "skill_score": round(float(features.get("skill_score", 0.0)), 4),
+                                        "experience_score": round(float(features.get("experience_score", 0.0)), 4),
+                                        "product_company_score": round(float(features.get("product_company_score", 0.0)), 4),
+                                        "behavior_score": round(float(features.get("behavior_score", 0.0)), 4),
+                                        "location_score": round(float(features.get("location_score", 0.0)), 4),
+                                        "keyword_stuffer_flag": bool(stuffer_result.get("flag", False)),
+                                        "honeypot_flag": bool(hp_result.get("flag", False)),
+                                        "duplicate_flag": False,
+                                        "reasoning": "Newly ingested candidate — run the pipeline to include in ranked results.",
+                                    })
+                                except Exception:
+                                    pass
+                        if new_rows:
+                            df = pd.DataFrame(new_rows)
+                    except Exception as e:
+                        logger.warning(f"Tier-3 JSONL search failed: {e}")
+            
             data = df.where(pd.notnull(df), None).to_dict(orient="records")
 
             # Apply pagination
@@ -327,10 +447,11 @@ def get_candidates(
                     "page": page,
                     "limit": limit,
                     "total": total,
-                    "pages": (total + limit - 1) // limit,
+                    "pages": max(1, (total + limit - 1) // limit),
                 },
             }
         except Exception as e:
+            logger.exception("Failed to fetch candidates list")
             raise HTTPException(status_code=500, detail=f"Failed to parse CSV: {e}")
 
     return {"candidates": [], "pagination": {"page": 1, "limit": limit, "total": 0, "pages": 0}}

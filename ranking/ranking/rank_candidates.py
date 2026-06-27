@@ -93,6 +93,9 @@ def build_global_description_counts(dataset_path: str) -> Dict[str, int]:
                     global_counts[h] = global_counts.get(h, 0) + 1
             except Exception:
                 pass
+    
+    # Filter to only keep duplicates to save memory and serialization overhead in multiprocessing
+    global_counts = {k: v for k, v in global_counts.items() if v > 1}
     return global_counts
 
 def _extract_candidate_features_worker(args):
@@ -224,6 +227,69 @@ def run_ranking_pipeline(base_dir: str = None):
             print("Pre-computed features are missing duplicate description check. Re-running extraction...")
             df_features = None
             
+        # Incremental update check for newly ingested candidates
+        if df_features is not None and dataset_path:
+            try:
+                # Read all candidate IDs in dataset_path
+                all_dataset_ids = set()
+                with open(dataset_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if not line.strip():
+                            continue
+                        try:
+                            obj = json.loads(line)
+                            cid = clean_id(obj.get("candidate_id", ""))
+                            if cid:
+                                all_dataset_ids.add(cid)
+                        except Exception:
+                            pass
+                
+                existing_ids = set(df_features["candidate_id"].tolist())
+                missing_ids = all_dataset_ids - existing_ids
+                
+                if missing_ids:
+                    print(f"Detected {len(missing_ids)} new candidates in dataset. Extracting features incrementally...")
+                    missing_candidates = []
+                    with open(dataset_path, "r", encoding="utf-8") as f:
+                        for line in f:
+                            if not line.strip():
+                                continue
+                            try:
+                                obj = json.loads(line)
+                                cid = clean_id(obj.get("candidate_id", ""))
+                                if cid in missing_ids:
+                                    missing_candidates.append(obj)
+                            except Exception:
+                                pass
+                    
+                    if missing_candidates:
+                        # Extract JD keywords and global counts
+                        from traps.keyword_stuffer import extract_jd_keywords
+                        from traps.duplicate_detector import get_description_hashes, calculate_duplicate_penalty
+                        
+                        jd_keywords = extract_jd_keywords(jd_text)
+                        global_counts = build_global_description_counts(dataset_path)
+                        
+                        new_rows = []
+                        for cand in missing_candidates:
+                            features = extract_features(cand, jd_keywords)
+                            features["candidate_id"] = clean_id(features.get("candidate_id", ""))
+                            
+                            # Duplicate check (Behavioral Twins)
+                            desc_hashes = get_description_hashes(cand)
+                            dup_result = calculate_duplicate_penalty(desc_hashes, global_counts)
+                            features["duplicate_flag"] = dup_result["flag"]
+                            features["duplicate_penalty"] = dup_result["penalty"]
+                            
+                            new_rows.append(features)
+                            
+                        df_new = pd.DataFrame(new_rows)
+                        df_features = pd.concat([df_features, df_new], ignore_index=True)
+                        df_features.to_csv(feature_csv, index=False)
+                        print(f"Appended {len(df_new)} new candidate features to cache.")
+            except Exception as e:
+                print(f"Warning: Failed to check/perform incremental feature extraction: {e}")
+            
     if df_features is None:
         if not dataset_path:
             print("Error: candidates.jsonl not found in root or data/ directory. Cannot extract features.")
@@ -304,8 +370,8 @@ def run_ranking_pipeline(base_dir: str = None):
             w_sem * df_top_500_valid["semantic_score"].fillna(0.0)
         ).fillna(0.0)
         
-        # Sort and select Top 100
-        top_100 = df_top_500_valid.sort_values(by="final_score", ascending=False).head(100).copy()
+        # Sort and select Top 100 with candidate_id tie-breaker
+        top_100 = df_top_500_valid.sort_values(by=["final_score", "candidate_id"], ascending=[False, True]).head(100).copy()
         
         # Assign ranks
         top_100["rank"] = range(1, len(top_100) + 1)

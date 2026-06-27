@@ -52,6 +52,7 @@ def score_and_filter_candidates(df: pd.DataFrame) -> pd.DataFrame:
     # 2. Extract flags and penalties
     keyword_stuffer_flag = df["keyword_stuffer_flag"].astype(bool) if "keyword_stuffer_flag" in df.columns else pd.Series(False, index=df.index)
     honeypot_flag = df["honeypot_flag"].astype(bool) if "honeypot_flag" in df.columns else pd.Series(False, index=df.index)
+    is_services_only_flag = df["is_services_only"].astype(bool) if "is_services_only" in df.columns else pd.Series(False, index=df.index)
     
     honeypot_penalty = df["honeypot_penalty"].fillna(0.0) if "honeypot_penalty" in df.columns else 0.0
     duplicate_penalty = df["duplicate_penalty"].fillna(0.0) if "duplicate_penalty" in df.columns else 0.0
@@ -72,12 +73,14 @@ def score_and_filter_candidates(df: pd.DataFrame) -> pd.DataFrame:
     # 5. Determine if rejected completely (is_trap = True)
     # - All Honeypots are filtered out
     # - Keyword stuffers with low title scores (< 0.3) are filtered out
+    # - Exclusive services/consulting firm backgrounds are filtered out
     title_score = df["title_score"] if "title_score" in df.columns else pd.Series(1.0, index=df.index)
     
     reject_honeypot = honeypot_flag
     reject_stuffer = keyword_stuffer_flag & (title_score < 0.3)
+    reject_services_only = is_services_only_flag
     
-    df["is_trap"] = reject_honeypot | reject_stuffer
+    df["is_trap"] = reject_honeypot | reject_stuffer | reject_services_only
     
     return df
 
@@ -94,6 +97,6 @@ def get_top_500_candidates(df: pd.DataFrame) -> pd.DataFrame:
     # Filter out traps
     valid_candidates = df[~df["is_trap"]].copy()
     
-    # Take top 500 based on final rule score
-    top_500 = valid_candidates.sort_values(by="final_rule_score", ascending=False).head(500)
+    # Take top 500 based on final rule score and tie-break on candidate_id ascending
+    top_500 = valid_candidates.sort_values(by=["final_rule_score", "candidate_id"], ascending=[False, True]).head(500)
     return top_500

@@ -1,4 +1,5 @@
 import string
+import re
 from typing import Any, Dict
 
 def detect_honeypot(candidate: Dict[str, Any]) -> Dict[str, Any]:
@@ -108,6 +109,50 @@ def detect_honeypot(candidate: Dict[str, Any]) -> Dict[str, Any]:
         penalties.append(0.4)
         confidences.append(0.6)
         
+    # 4. Foundation Year Contradictions (Startup Honeypot Trap)
+    career_history = candidate.get("career_history", [])
+    if isinstance(career_history, list):
+        for job in career_history:
+            if not isinstance(job, dict):
+                continue
+            desc = job.get("description", "")
+            if not isinstance(desc, str) or not desc.strip():
+                continue
+            
+            # Find year mentions associated with foundation
+            match = re.search(r'\b(?:founded|established|started|incorporated)\s+in\s+(\d{4})\b', desc, re.IGNORECASE)
+            if match:
+                founded_year = int(match.group(1))
+                
+                # Check if start_date predates foundation
+                start_date = job.get("start_date")
+                if isinstance(start_date, str) and len(start_date) >= 4:
+                    try:
+                        start_year = int(start_date.split("-")[0])
+                        if start_year < founded_year:
+                            penalties.append(1.0)
+                            confidences.append(1.0)
+                    except (ValueError, TypeError):
+                        pass
+                
+                # Check if duration implies starting before foundation (current year is 2026)
+                duration_months = job.get("duration_months")
+                if duration_months is not None:
+                    try:
+                        dur_months = int(duration_months)
+                        end_year = 2026
+                        if not job.get("is_current", True):
+                            end_date = job.get("end_date")
+                            if isinstance(end_date, str) and len(end_date) >= 4:
+                                end_year = int(end_date.split("-")[0])
+                        
+                        approx_start_year = end_year - (dur_months / 12)
+                        if approx_start_year < founded_year - 1:
+                            penalties.append(1.0)
+                            confidences.append(1.0)
+                    except (ValueError, TypeError):
+                        pass
+
     if penalties:
         result["flag"] = True
         # Use the maximum penalty/confidence found for the final result

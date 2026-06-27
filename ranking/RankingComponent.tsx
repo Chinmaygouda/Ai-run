@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRecentlyReviewed } from "@/hooks/useRecentlyReviewed";
 
 // Helper function to format score percentage
 const formatPercent = (val: any) => {
@@ -59,6 +60,8 @@ const ScoreBar = ({ label, val, colorClass = "bg-violet-500" }: { label: string;
 };
 
 export default function RankingComponent() {
+  const { addReview } = useRecentlyReviewed();
+
   // API Health state
   const [health, setHealth] = useState<any>(null);
   const [healthLoading, setHealthLoading] = useState(false);
@@ -257,10 +260,17 @@ export default function RankingComponent() {
   }, [jobId]);
 
   // Fetch Ranked Candidates
-  const fetchCandidates = async (page: number = 1) => {
+  const fetchCandidates = async (page: number = 1, search: string = searchTerm) => {
     setCandidatesLoading(true);
     try {
-      const res = await fetch(`/api/candidates?page=${page}&limit=10`);
+      const query = new URLSearchParams({
+        page: page.toString(),
+        limit: "10"
+      });
+      if (search.trim()) {
+        query.append("search", search.trim());
+      }
+      const res = await fetch(`/api/candidates?${query.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setCandidates(data.candidates || []);
@@ -280,6 +290,24 @@ export default function RankingComponent() {
     setSelectedCandidate(candidate);
     setDetailLoading(true);
     setCandidateDetail(null);
+
+    // Add to recently reviewed history
+    addReview({
+      candidate_id: candidate.candidate_id,
+      rank: candidate.rank,
+      final_score: candidate.final_score,
+      final_rule_score: candidate.final_rule_score,
+      skill_score: candidate.skill_score,
+      experience_score: candidate.experience_score,
+      product_company_score: candidate.product_company_score,
+      behavior_score: candidate.behavior_score,
+      location_score: candidate.location_score,
+      keyword_stuffer_flag: candidate.keyword_stuffer_flag,
+      honeypot_flag: candidate.honeypot_flag,
+      duplicate_flag: candidate.duplicate_flag,
+      reasoning: candidate.reasoning,
+    });
+
     try {
       const res = await fetch(`/api/candidates/${candidate.candidate_id}`);
       if (res.ok) {
@@ -300,13 +328,18 @@ export default function RankingComponent() {
   useEffect(() => {
     fetchHealth();
     fetchJD();
-    fetchCandidates(1);
   }, []);
 
-  // Filter candidates on SearchTerm
-  const filteredCandidates = candidates.filter(c => 
-    c.candidate_id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Fetch candidates when search term changes (with debounce)
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchCandidates(1, searchTerm);
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
+  // Filter candidates on SearchTerm (now handled server-side)
+  const filteredCandidates = candidates;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-16">
@@ -488,7 +521,10 @@ export default function RankingComponent() {
                     ) : filteredCandidates.length === 0 ? (
                       <tr>
                         <td colSpan={7} className="px-6 py-12 text-center text-zinc-500">
-                          No candidates found. Trigger the ranking pipeline to compute candidates.
+                          {searchTerm
+                            ? <span>No candidates found matching <span className="font-mono text-zinc-300">&ldquo;{searchTerm}&rdquo;</span>.</span>
+                            : "No candidates found. Trigger the ranking pipeline to compute candidates."
+                          }
                         </td>
                       </tr>
                     ) : (
@@ -501,14 +537,24 @@ export default function RankingComponent() {
                             className="hover:bg-white/5 transition-colors cursor-pointer group"
                           >
                             <td className="px-6 py-4">
-                              <span className={`inline-flex w-7 h-7 items-center justify-center rounded-lg font-mono font-bold text-xs ${
-                                c.rank === 1 ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" :
-                                c.rank === 2 ? "bg-zinc-300/20 text-zinc-300 border border-zinc-300/30" :
-                                c.rank === 3 ? "bg-amber-700/20 text-amber-600 border border-amber-700/30" :
-                                "bg-zinc-800/40 text-zinc-400 border border-white/5"
-                              }`}>
-                                {c.rank}
-                              </span>
+                              {c.rank === "NEW" ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md font-mono font-bold text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 uppercase tracking-widest">
+                                  NEW
+                                </span>
+                              ) : c.rank === "N/A" ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md font-mono font-bold text-[10px] bg-zinc-700/30 text-zinc-500 border border-white/5 uppercase">
+                                  N/A
+                                </span>
+                              ) : (
+                                <span className={`inline-flex w-7 h-7 items-center justify-center rounded-lg font-mono font-bold text-xs ${
+                                  c.rank === 1 ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" :
+                                  c.rank === 2 ? "bg-zinc-300/20 text-zinc-300 border border-zinc-300/30" :
+                                  c.rank === 3 ? "bg-amber-700/20 text-amber-600 border border-amber-700/30" :
+                                  "bg-zinc-800/40 text-zinc-400 border border-white/5"
+                                }`}>
+                                  {c.rank}
+                                </span>
+                              )}
                             </td>
                             <td className="px-6 py-4 font-mono font-medium text-white group-hover:text-cyan-400 transition-colors">
                               {c.candidate_id}

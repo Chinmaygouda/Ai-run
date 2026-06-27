@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { format } from "date-fns";
-import { Activity, HardDrive, BarChart3, Target, Loader2, Trophy, FileText, AlertTriangle, Users } from "lucide-react";
+import { Link } from "wouter";
+import { Activity, HardDrive, BarChart3, Target, Loader2, Trophy, FileText, AlertTriangle, Users, Clock, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useRecentlyReviewed } from "@/hooks/useRecentlyReviewed";
 
 const staggerContainer = {
   hidden: { opacity: 0 },
@@ -35,6 +37,7 @@ interface HealthData {
 }
 
 export default function Dashboard() {
+  const { reviewed } = useRecentlyReviewed();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [health, setHealth] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -233,6 +236,63 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Recently Reviewed Widget */}
+          <motion.div variants={fadeUp} className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Clock className="w-5 h-5 text-violet-400" /> Recently Reviewed
+              </h2>
+              {reviewed.length > 0 && (
+                <Link href="/history">
+                  <span className="text-xs text-violet-400 hover:text-violet-300 flex items-center gap-0.5 cursor-pointer">
+                    View All <ChevronRight className="w-3.5 h-3.5" />
+                  </span>
+                </Link>
+              )}
+            </div>
+            {reviewed.length === 0 ? (
+              <div className="py-6 text-center">
+                <p className="text-zinc-500 text-xs mb-2">No profiles reviewed recently.</p>
+                <Link href="/history">
+                  <span className="text-xs text-violet-400 hover:text-violet-300 font-semibold cursor-pointer">
+                    Browse Rankings &rarr;
+                  </span>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {reviewed.slice(0, 3).map((c) => {
+                  const scoreColor = c.final_score >= 0.55 ? "text-emerald-400" :
+                                     c.final_score >= 0.35 ? "text-violet-400" :
+                                     "text-zinc-500";
+                  return (
+                    <Link key={c.candidate_id} href="/history">
+                      <div className="p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between hover:bg-white/5 transition-colors cursor-pointer group">
+                        <div className="min-w-0 flex-1 mr-2">
+                          <div className="text-sm font-medium text-white font-mono group-hover:text-violet-400 transition-colors truncate">
+                            {c.candidate_id}
+                          </div>
+                          <div className="text-xs text-zinc-500 flex items-center gap-1.5 mt-0.5">
+                            <span className={cn("font-bold font-mono", scoreColor)}>
+                              {(c.final_score * 100).toFixed(0)}%
+                            </span>
+                            {c.rank !== "N/A" && c.rank !== "NEW" && (
+                              <span>#{c.rank}</span>
+                            )}
+                            {(c.keyword_stuffer_flag || c.honeypot_flag || c.duplicate_flag) && (
+                              <span className="px-1 rounded bg-red-500/10 text-red-400 text-[9px] border border-red-500/20 font-bold">⚑ Flagged</span>
+                            )}
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-white transition-colors shrink-0" />
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </motion.div>

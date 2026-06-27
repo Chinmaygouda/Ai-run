@@ -11,9 +11,12 @@ import {
   Server,
   Menu,
   X,
-  Trophy
+  Trophy,
+  Clock,
+  ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useRecentlyReviewed } from "@/hooks/useRecentlyReviewed";
 
 interface SidebarLayoutProps {
   children: ReactNode;
@@ -22,6 +25,7 @@ interface SidebarLayoutProps {
 export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const { reviewed } = useRecentlyReviewed();
 
   const navGroups = [
     {
@@ -47,6 +51,8 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     }
   ];
 
+  const recent5 = reviewed.slice(0, 5);
+
   return (
     <div className="min-h-[100dvh] bg-[#09090b] flex text-white font-sans selection:bg-violet-500/30">
       {/* Mobile Nav Toggle */}
@@ -64,6 +70,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         "w-64 border-r border-white/10 bg-black/40 backdrop-blur-xl flex flex-col fixed inset-y-0 z-50 transition-transform duration-300",
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
+        {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-white/10 shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2 group w-full">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center shrink-0">
@@ -75,6 +82,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           </Link>
         </div>
 
+        {/* User */}
         <div className="px-4 py-6 border-b border-white/10 flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-cyan-500 flex items-center justify-center font-bold text-sm text-white shrink-0">
             SC
@@ -85,7 +93,8 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           </div>
         </div>
 
-        <nav className="flex-1 py-4 px-3 space-y-6 overflow-y-auto">
+        {/* Nav */}
+        <nav className="flex-1 py-4 px-3 overflow-y-auto space-y-6">
           {navGroups.map((group) => (
             <div key={group.label} className="space-y-1">
               <div className="px-3 text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2">
@@ -105,14 +114,81 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                     >
                       <item.icon className={cn("w-4 h-4 mr-3", isActive ? "text-cyan-400" : "text-zinc-500")} />
                       {item.name}
+                      {/* Badge for History showing how many reviewed */}
+                      {item.href === "/history" && reviewed.length > 0 && (
+                        <span className="ml-auto text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-400 border border-violet-500/20">
+                          {reviewed.length}
+                        </span>
+                      )}
                     </button>
                   </Link>
                 );
               })}
             </div>
           ))}
+
+          {/* ── Recently Reviewed Widget ─────────────────── */}
+          {recent5.length > 0 && (
+            <div className="space-y-1">
+              <div className="px-3 text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2 flex items-center gap-2">
+                <Clock className="w-3 h-3" />
+                Recently Reviewed
+              </div>
+              <div className="space-y-0.5">
+                {recent5.map((c) => {
+                  const scoreColor = c.final_score >= 0.55
+                    ? "text-emerald-400"
+                    : c.final_score >= 0.35
+                    ? "text-violet-400"
+                    : "text-zinc-500";
+                  const hasTrap = c.keyword_stuffer_flag || c.honeypot_flag || c.duplicate_flag;
+                  return (
+                    <Link
+                      key={c.candidate_id}
+                      href="/history"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors group cursor-pointer">
+                        {/* Score dot */}
+                        <div className={cn(
+                          "w-1.5 h-1.5 rounded-full shrink-0",
+                          c.final_score >= 0.55 ? "bg-emerald-400" :
+                          c.final_score >= 0.35 ? "bg-violet-400" : "bg-zinc-600"
+                        )} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-mono text-zinc-300 truncate group-hover:text-white transition-colors">
+                            {c.candidate_id}
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className={cn("text-[10px] font-mono font-bold", scoreColor)}>
+                              {(c.final_score * 100).toFixed(0)}%
+                            </span>
+                            {hasTrap && (
+                              <span className="text-[9px] px-1 rounded bg-red-500/10 text-red-500 border border-red-500/20">⚑</span>
+                            )}
+                            {c.rank !== "N/A" && c.rank !== "NEW" && (
+                              <span className="text-[9px] text-zinc-600">#{c.rank}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+              {reviewed.length > 5 && (
+                <Link href="/history" onClick={() => setIsOpen(false)}>
+                  <button className="w-full flex items-center justify-center gap-1 px-3 py-1.5 text-xs text-zinc-600 hover:text-violet-400 transition-colors">
+                    +{reviewed.length - 5} more
+                    <ChevronRight className="w-3 h-3" />
+                  </button>
+                </Link>
+              )}
+            </div>
+          )}
         </nav>
 
+        {/* Bottom section */}
         <div className="p-4 border-t border-white/10 flex flex-col gap-4 shrink-0">
           <div>
             <div className="flex items-center justify-between text-xs mb-2">
