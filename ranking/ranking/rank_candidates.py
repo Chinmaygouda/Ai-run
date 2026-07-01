@@ -32,14 +32,23 @@ def ensure_directories(base_dir: str = None):
     os.makedirs(os.path.join(base_dir, "data"), exist_ok=True)
 
 def find_dataset_file(base_dir: str = None) -> str:
-    """Find the candidates.jsonl file path in either root or data/."""
+    """Find the candidates.jsonl file path in either root, data/, or nested ranking/data directories."""
     if base_dir is None:
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    paths = [
-        os.path.join(base_dir, "data", "candidates.jsonl"),
-        os.path.join(base_dir, "candidates.jsonl")
-    ]
-    for path in paths:
+
+    checked_paths = []
+    current_dir = os.path.abspath(base_dir)
+    while True:
+        checked_paths.extend([
+            os.path.join(current_dir, "data", "candidates.jsonl"),
+            os.path.join(current_dir, "candidates.jsonl"),
+            os.path.join(current_dir, "ranking", "data", "candidates.jsonl"),
+        ])
+        if current_dir == os.path.dirname(current_dir):
+            break
+        current_dir = os.path.dirname(current_dir)
+
+    for path in checked_paths:
         if os.path.exists(path):
             return path
     return ""
