@@ -18,6 +18,7 @@ from ranking.ranking.rank_candidates import run_ranking_pipeline
 
 def main() -> None:
     """Run the ranking pipeline from the repository root."""
+    ranking_dir = repo_root / "ranking"
     base_dir = str(ranking_dir)
     run_ranking_pipeline(base_dir=base_dir)
 
