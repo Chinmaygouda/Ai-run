@@ -372,7 +372,7 @@ def get_candidates(
                         try:
                             from ranking.scoring_engine import calculate_rule_score
                         except ImportError:
-                            from scoring_engine import calculate_rule_score
+                            from ranking.scoring_engine import calculate_rule_score
                         
                         # Load feature CSV IDs so we know what's "new"
                         known_ids: set = set()

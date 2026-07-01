@@ -1,10 +1,7 @@
 import pandas as pd
 from typing import Dict, List, Any
 
-try:
-    from ranking.weight_config import RULE_WEIGHTS
-except ModuleNotFoundError:
-    from weight_config import RULE_WEIGHTS
+from .weight_config import RULE_WEIGHTS
 
 def calculate_rule_score(row: Any) -> float:
     """
