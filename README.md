@@ -14,10 +14,11 @@ The primary submission flow is:
 From the repository root, run:
 
 ```bash
+git lfs install && git lfs pull
 python rank.py
 ```
 
-This generates:
+This downloads the tracked dataset and generates:
 - `ui/ranking/outputs/top100.csv`
 - `ui/ranking/outputs/submission.csv`
 
@@ -46,6 +47,7 @@ ui/
 - `requirements.txt` — Python runtime dependencies
 - `frontend/` — front-end prototype and UI documentation
 - `ranking/` — full ranking system, feature engineering, and output generation
+- `ranking/data/candidates.jsonl` — full candidate dataset tracked via Git LFS
 - `submission_metadata.yaml` — submission metadata file to complete before final upload
 
 ## How to use
@@ -67,6 +69,8 @@ npm run dev
 - Scores must be non-increasing from rank 1 to rank 100.
 - No external network calls should be made during ranking.
 - The ranking step must run on CPU only and within the contest compute budget.
+- The full dataset is tracked with Git LFS at `ranking/data/candidates.jsonl`.
+- Reviewers should run `git lfs install && git lfs pull` before running `python rank.py`.
 
 ## Frontend documentation
 The frontend has its own detailed README at `frontend/README.md`.

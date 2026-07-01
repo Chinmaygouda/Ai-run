@@ -29,9 +29,9 @@ team_members:
 # ============================================================================
 github_repo: "https://github.com/Chinmaygouda/Ai-run.git"
 
-sandbox_link: "https://huggingface.co/spaces/YOUR_USERNAME/redrob-ranker"
+sandbox_link: "https://colab.research.google.com/drive/YOUR_NOTEBOOK_ID"
 
-reproduce_command: "python rank.py"
+reproduce_command: "git lfs install && git lfs pull && python rank.py"
 
 # ============================================================================
 # Compute environment
