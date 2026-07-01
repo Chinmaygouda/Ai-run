@@ -73,14 +73,21 @@ The frontend has its own detailed README at `frontend/README.md`.
 That file includes UI screenshots, page links, and component summaries.
 
 ## Screenshots
-UI screenshots are available here:
-- `frontend/docs/screenshots/1-landing_page.png`
-- `frontend/docs/screenshots/2-dashboard.png`
-- `frontend/docs/screenshots/3-analysis.png`
-- `frontend/docs/screenshots/4-history.png`
-- `frontend/docs/screenshots/5-reports.png`
-- `frontend/docs/screenshots/6-settings.png`
-- `frontend/docs/screenshots/7-Result.png`
+UI screenshots are embedded below from the `frontend/docs/screenshots/` folder.
+
+![Landing page](frontend/docs/screenshots/1-landing_page.png)
+
+![Dashboard](frontend/docs/screenshots/2-dashboard.png)
+
+![Analysis](frontend/docs/screenshots/3-analysis.png)
+
+![History](frontend/docs/screenshots/4-history.png)
+
+![Reports](frontend/docs/screenshots/5-reports.png)
+
+![Settings](frontend/docs/screenshots/6-settings.png)
+
+![Result](frontend/docs/screenshots/7-Result.png)
 
 ## Cleanup status
 - Generated build artifacts have been removed from source control.
