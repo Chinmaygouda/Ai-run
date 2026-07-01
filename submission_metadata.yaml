@@ -29,7 +29,7 @@ team_members:
 # ============================================================================
 github_repo: "https://github.com/Chinmaygouda/Ai-run.git"
 
-sandbox_link: "https://colab.research.google.com/drive/YOUR_NOTEBOOK_ID"
+sandbox_link: "https://colab.research.google.com/drive/1c1xgThJ7eagxj8X6KV6fMv2dHtm1_J7X?usp=sharing"
 
 reproduce_command: "git lfs install && git lfs pull && python rank.py"
 
@@ -53,27 +53,26 @@ compute:
 ai_tools_used:
   - "GitHub Copilot"
   - "Claude"
+  - "Antigravity IDE"
+  - "Gemini"
 
 ai_usage_summary: |
-  Briefly describe how AI tools were used. Examples:
-  - "Used Claude for code review and architectural discussion. Used Copilot for autocomplete.
-     No candidate data was fed to any LLM."
-  - "Used ChatGPT to debug Python issues and Cursor for refactoring."
-  - "No AI tools used."
+  Used GitHub Copilot for code completion and repository organization.
+  Used Antigravity IDE with Gemini and Claude for design review, ranking logic
+  discussion, and repository workflow guidance.
+  No candidate data was shared with any external AI model during development.
 
 # ============================================================================
 # Approach summary (optional but recommended)
 # ============================================================================
 methodology_summary: |
-  ≤200 word summary of your approach. Strongly recommended.
-
-  Example:
-  "Rule-based ranker with explicit reasoning capture. Five scoring components
-  (skills, title+career, experience years, location, education) combined with
-  a multiplicative behavioral-signal modifier. The title component is the
-  decisive signal against keyword-stuffer traps; an endorsement-and-duration
-  trust multiplier on skills catches lazy keyword stuffing. Runtime is ~10
-  seconds for 50K candidates on CPU."
+  Hybrid rule-based ranking with semantic reranking. We extract structured
+  features from candidate profiles and apply trap detection for honeypots,
+  keyword stuffers, and duplicate behavioral twins. The pipeline scores each
+  candidate using skill, title, experience, career, behavior, and location
+  signals, then applies a semantic reranker over the top 500 candidates to
+  refine the final Top 100. The output is written in the required submission
+  format and validated for 100 ranked rows with monotonic decreasing scores.
 
 # ============================================================================
 # Declarations

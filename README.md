@@ -101,4 +101,5 @@ UI screenshots are embedded below from the `frontend/docs/screenshots/` folder.
 ## Current status
 - Ranking pipeline is implemented and runnable.
 - Final submission validation is required before upload.
-- `submission_metadata.yaml` still needs sandbox and methodology details.
+- `submission_metadata.yaml` has been completed with AI usage and methodology summaries.
+- `sandbox.ipynb` provides a Colab-friendly reproducibility notebook for reviewers.
