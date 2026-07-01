@@ -47,26 +47,71 @@ The system is divided into two major stages:
 ### Prerequisites
 - Python 3.8+
 - Pandas
+- Optional: `sentence-transformers` for semantic reranking
 
 ### Setup
 1. Clone the repository and navigate to the project directory.
-2. Ensure you have the raw data file named `candidates.jsonl` located in the root of the project.
+2. Ensure you have the raw data file named `candidates.jsonl` located in `ui/ranking/data/`.
+3. Ensure `ui/ranking/data/jd.txt` is present.
 
 ### Running the Pipeline
-To generate the feature dataset, run:
+From the repository root, run:
 ```bash
-python generate_features.py
+python rank.py
 ```
-*This script will process `candidates.jsonl` and output the results to `outputs/candidate_features.csv`.*
+This will execute the full ranking pipeline and produce:
+- `ui/ranking/outputs/top100.csv`
+- `ui/ranking/outputs/submission.csv`
 
-To run the pipeline's tests and utilities:
+### Running only feature extraction
+To generate the intermediate feature data:
 ```bash
-python test_pipeline.py
-python check_scores.py
+python ui/ranking/generate_features.py
+```
+This will output `ui/ranking/outputs/candidate_features.csv`.
+
+### Running tests and utilities
+```bash
+python ui/ranking/test_pipeline.py
+python ui/ranking/check_scores.py
 ```
 
-## How to Generate Features
-The `generate_features.py` script reads the `candidates.jsonl` file line by line. For each candidate, it calls `preprocessing.feature_extractor.extract_features()`. This orchestrator runs all individual preprocessing modules and trap detectors, generating a unified dictionary of features. These dictionaries are then aggregated and saved as a CSV using Pandas.
+## Submission reproduction command
+Use this exact command from the repo root:
+```bash
+python rank.py
+```
+
+## What this repository currently implements
+- Full candidate feature extraction and trap detection
+- Product-company score and location score extraction
+- Rule-based ranking with trap filtering
+- Semantic reranking fallback to TF-IDF when sentence-transformers is unavailable
+- Output generation of valid `top100.csv` and `submission.csv`
+- Submission CSV validation checks
+
+## Pending / remaining implementation work
+### Priority items
+- Add error boundary and frontend upload validation in `ui/frontend`
+- Implement loading states and semantic page code splitting
+- Fix `alert()` usage in `ui/frontend/src/pages/Upload.tsx` and any frontend auth path bugs
+- Add actual `sandbox_link` to `submission_metadata.yaml`
+- Add real `github_repo` URL and contact metadata in `submission_metadata.yaml`
+- Validate the final submission CSV against the spec before upload
+
+### Ranking-specific work still to confirm
+- Verify the final ranker avoids honeypots in the top 100
+- Improve duplicate detection with fuzzy matching
+- Confirm experience score behavior avoids age bias
+- Add more deterministic reasoning text for top candidates
+
+### Additional production hardening
+- Add `README.md` at the repo root describing reproduction and requirements
+- Add `requirements.txt` or `pyproject.toml` for dependency management
+- Add an ESLint configuration in the frontend project
+
+## Notes
+The current pipeline is runnable from the repo root and produces the required submission CSV format. The remaining work is largely around frontend polish, metadata completion, and final ranking validation for hackathon submission constraints.
 
 ## Expected Output
 The generation process produces `outputs/candidate_features.csv` with the following schema:
