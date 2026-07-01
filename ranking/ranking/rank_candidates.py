@@ -20,9 +20,9 @@ try:
     from ranking.weight_config import FUSION_WEIGHTS
     from ranking.evaluation import validate_submission_csv
 except ModuleNotFoundError:
-    from scoring_engine import score_and_filter_candidates, get_top_500_candidates
-    from weight_config import FUSION_WEIGHTS
-    from evaluation import validate_submission_csv
+    from .scoring_engine import score_and_filter_candidates, get_top_500_candidates
+    from .weight_config import FUSION_WEIGHTS
+    from .evaluation import validate_submission_csv
 
 def ensure_directories(base_dir: str = None):
     """Create outputs/ and data/ directories if they don't exist."""
